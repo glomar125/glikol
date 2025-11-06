@@ -1,21 +1,19 @@
-from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.common.by import By
+import streamlit as st
 import time
 
-# Utworzenie przeglądarki Firefox
-driver = webdriver.Firefox()
+# Konfiguracja strony
+st.set_page_config(page_title="Hello App", page_icon="👋")
 
-try:
-    # Otworzenie pustej strony
-    driver.get("about:blank")
-    
-    # Wstawienie tekstu "hello" do strony
-    driver.execute_script('document.body.innerHTML = "<h1>hello</h1>"')
-    
-    # Czekamy 57 sekund
-    time.sleep(7)
+# Wyświetlenie tekstu
+st.title("Hello")
 
-finally:
-    # Zamknięcie przeglądarki
-    driver.quit()
+# Dodanie przycisku do odświeżenia
+if st.button("Odśwież"):
+    st.balloons()  # Efekt balonów po kliknięciu
+
+# Dodanie licznika czasu (opcjonalne)
+placeholder = st.empty()
+for i in range(5, 0, -1):
+    placeholder.text(f"Ta strona odświeży się za {i} sekund...")
+    time.sleep(1)
+placeholder.text("Czas minął!")
