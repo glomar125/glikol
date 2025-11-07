@@ -1,0 +1,20 @@
+{
+    // Konfiguracje uruchamiania i debugowania.
+    // Zwykle nie musisz niczego zmieniać poza "name" i "module".
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Streamlit Run (Działająca Strzałka)",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${file}"
+            ],
+            "justMyCode": true,
+            // Wymuś użycie wybranego środowiska VENV:
+            "pythonPath": "${workspaceFolder}/venv_stable/Scripts/python.exe" 
+        }
+    ]
+}
