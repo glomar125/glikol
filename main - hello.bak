@@ -1,0 +1,17 @@
+import streamlit as st
+import hello # Importuje Twój plik hello.py (dawny glikol.py)
+
+# Ta funkcja nie jest konieczna, ale jeśli chcesz ją mieć, to:
+def main():
+    # Ustawienie konfiguracji dla strony głównej (jeśli jest potrzebne)
+    st.set_page_config(page_title="Główna Aplikacja GLIKOL", page_icon="⚙️")
+    
+    st.title("Witaj w Aplikacji GLIKOL")
+    st.markdown("---")
+    
+    st.info("Poniżej znajduje się kod Twojej pierwszej strony (hello.py) uruchomiony jako funkcja.")
+    
+    hello.hello_app()
+
+if __name__ == "__main__":
+    main()
