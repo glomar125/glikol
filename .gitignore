@@ -5,6 +5,9 @@
 venv_stable/
 .venv/
 
+# Katalogi konfiguracyjne - ZALECANE
+.streamlit/
+
 # Pliki tymczasowe VS Code (opcjonalnie)
 *.pyc
 __pycache__/
