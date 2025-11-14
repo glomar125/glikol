@@ -1,1 +1,10 @@
+# Dane uwierzytelniające i wrażliwe
+.env
+
+# Środowisko wirtualne
+venv_stable/
 .venv/
+
+# Pliki tymczasowe VS Code (opcjonalnie)
+*.pyc
+__pycache__/
