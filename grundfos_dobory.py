@@ -19,6 +19,7 @@ if not USERNAME or not PASSWORD:
     raise SystemExit("Brakuje LOGIN_EMAIL lub LOGIN_PASS w pliku .env")
 
 # ---- Konfiguracja WebDrivera ----
+
 options = webdriver.ChromeOptions()
 # jeśli chcesz widzieć okno przeglądarki, usuń argument "--headless=new"
 # options.add_argument("--headless=new")   # tryb headless (bez GUI)
@@ -27,7 +28,7 @@ options.add_argument("--disable-gpu")
 # opcjonalnie: options.add_argument("--no-sandbox")
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-wait = WebDriverWait(driver, 20)  # globalny timeout 20s
+wait = WebDriverWait(driver, 7)  # globalny timeout 7s
 
 try:
     url = ("https://login.grundfos.com/grundfosauth.onmicrosoft.com/"
@@ -38,44 +39,69 @@ try:
            "&state=https%3A%2F%2Fwww.grundfos.com%2Fpl%2Fmygrundfos%2Flist-price-and-availability")
 
     driver.get(url)
+    
+    # Spróbuj automatycznie kliknąć przycisk akceptacji cookies
+    cookies_clicked = False
+    cookie_selectors = [
+        (By.XPATH, "//button[contains(text(),'Akceptuj') or contains(text(),'Zgadzam się') or contains(text(),'Accept') or contains(text(),'OK') or contains(text(),'Potwierdź') or contains(text(),'Accept all') or contains(text(),'accept')]"),
+        (By.ID, "acceptAllBtn"),
+        (By.CSS_SELECTOR, "button#acceptAllBtn, button.cookie-accept, button[aria-label*='akceptuj'], button[aria-label*='accept']")
+    ]
+    for by, sel in cookie_selectors:
+        try:
+            cookie_btn = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((by, sel)))
+            try:
+                cookie_btn.click()
+            except Exception:
+                driver.execute_script("arguments[0].click();", cookie_btn)
+            print(f"Automatycznie kliknięto przycisk cookies: {sel}")
+            cookies_clicked = True
+            break
+        except Exception:
+            continue
+    if not cookies_clicked:
+        print("Nie znaleziono przycisku cookies lub nie kliknięto automatycznie. Możesz zaakceptować ręcznie.")
+    # Poczekaj na zniknięcie overlay po akceptacji
+    try:
+        WebDriverWait(driver, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME, "cookieOverlay")))
+    except Exception:
+        pass
+    time.sleep(1)
+    # Diagnostyka: zapisz HTML po próbie kliknięcia cookies (zawsze)
+    with open("debug_after_cookies.html", "w", encoding="utf-8") as f:
+        f.write(driver.page_source)
+    print("Zapisano HTML po próbie kliknięcia cookies do debug_after_cookies.html")
 
     # --- PRZYKŁADOWE: czekaj na pole e-mail i wpisz login ---
-    # Uwaga: musisz dopasować selektory do rzeczywistej strony (ID / NAME / XPATH)
+    # Użyj bezpośrednich, pewnych selektorów z debug_after_cookies.html
     try:
-        email_input = wait.until(EC.presence_of_element_located((By.ID, "signInName")))  # przykład selektora MS
+        email_input = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "signInName")))
     except TimeoutException:
-        # Spróbuj innego selektora lub wydrukuj źródło, by znaleźć pola
-        print("Pole e-mail nie znalezione — wypisz źródło strony dla debugowania.")
+        print("Pole e-mail nieaktywne (id='signInName'). Debug HTML:")
         print(driver.page_source[:2000])
         raise
-
     email_input.clear()
     email_input.send_keys(USERNAME)
 
-    # przycisk "Next" / "Dalej" (dopasuj selektor)
     try:
-        next_btn = driver.find_element(By.ID, "idSIButton9")  # przykład dla MS login
-        next_btn.click()
-    except NoSuchElementException:
-        # inna wersja strony — spróbuj przycisku typu submit
-        email_input.submit()
-
-    # --- czekaj na pole hasła ---
-    try:
-        pwd_input = wait.until(EC.presence_of_element_located((By.NAME, "passwd")))
+        pwd_input = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "password")))
     except TimeoutException:
-        print("Pole hasła nie pojawiło się — możliwe przekierowanie / MFA / różna wersja strony.")
+        print("Pole hasła nieaktywne (id='password'). Debug HTML:")
+        print(driver.page_source[:2000])
         raise
-
     pwd_input.clear()
     pwd_input.send_keys(PASSWORD)
 
-    # przycisk zaloguj (dopasuj selektor)
     try:
-        signin_btn = driver.find_element(By.ID, "idSIButton9")
+        signin_btn = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "next")))
+        # Usuwamy atrybut 'disabled' jeśli występuje
+        driver.execute_script("arguments[0].removeAttribute('disabled');", signin_btn)
         signin_btn.click()
-    except NoSuchElementException:
-        pwd_input.submit()
+        print("Kliknięto przycisk logowania (id='next').")
+    except Exception:
+        print("Nie znaleziono przycisku logowania (id='next'). Debug HTML:")
+        print(driver.page_source[:2000])
+        raise
 
     # --- opcjonalnie: obsługa "Stay signed in?" ---
     try:
@@ -102,6 +128,9 @@ try:
         # możesz też zapisać HTML:
         with open("debug_page.html", "w", encoding="utf-8") as f:
             f.write(driver.page_source)
+    # Pozostaw okno otwarte do ręcznego zamknięcia
+    input("Naciśnij Enter, aby zamknąć przeglądarkę...")
+    driver.quit()
 
     # --- Opcjonalne: poczekaj i zakończ ---
     time.sleep(5)
