@@ -48,6 +48,23 @@ def import_pdf_data():
                 
             except Exception as e:
                 st.error(f"Wystąpił błąd podczas przetwarzania PDF: {e}")
+                # Alternatywa: spróbuj pdfplumber
+                try:
+                    import pdfplumber
+                    st.info("Próbuję wyodrębnić tabele za pomocą pdfplumber...")
+                    tables_found = False
+                    with pdfplumber.open(temp_pdf_path) as pdf:
+                        for page_num, page in enumerate(pdf.pages):
+                            table = page.extract_table()
+                            if table:
+                                df = pd.DataFrame(table[1:], columns=table[0])
+                                st.write(f"--- Tabela z pdfplumber, strona {page_num+1} ---")
+                                st.dataframe(df)
+                                tables_found = True
+                    if not tables_found:
+                        st.warning("pdfplumber: Nie znaleziono tabel w tym pliku PDF.")
+                except Exception as e2:
+                    st.error(f"pdfplumber również nie odczytał tabel: {e2}")
 
 # Opcjonalnie: Uruchomienie jako samodzielny skrypt
 if __name__ == "__main__":
