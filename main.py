@@ -1,12 +1,12 @@
 # main.py
 import streamlit as st
 import hello
-import pdf_importer # <- Importuj nową stronę
+import pdf_importer_s # <- Importuj nową stronę
 
 # Mapa stron
 PAGES = {
     "Hello App": hello.hello_app,
-    "Import PDF": pdf_importer.import_pdf_data,
+    "Import PDF": pdf_importer_s.import_pdf_data,
 }
 
 def main():
