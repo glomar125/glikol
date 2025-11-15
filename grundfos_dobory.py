@@ -43,8 +43,10 @@ try:
     # Spróbuj automatycznie kliknąć przycisk akceptacji cookies
     cookies_clicked = False
     cookie_selectors = [
-        (By.XPATH, "//button[contains(text(),'Akceptuj') or contains(text(),'Zgadzam się') or contains(text(),'Accept') or contains(text(),'OK') or contains(text(),'Potwierdź') or contains(text(),'Accept all') or contains(text(),'accept')]"),
+        (By.XPATH, "//*[@id='acceptAllBtn']"),
+        (By.CSS_SELECTOR, "a#acceptAllBtn"),
         (By.ID, "acceptAllBtn"),
+        (By.XPATH, "//button[contains(text(),'Akceptuj') or contains(text(),'Zgadzam się') or contains(text(),'Accept') or contains(text(),'OK') or contains(text(),'Potwierdź') or contains(text(),'Accept all') or contains(text(),'accept')]"),
         (By.CSS_SELECTOR, "button#acceptAllBtn, button.cookie-accept, button[aria-label*='akceptuj'], button[aria-label*='accept']")
     ]
     for by, sel in cookie_selectors:
@@ -54,31 +56,22 @@ try:
                 cookie_btn.click()
             except Exception:
                 driver.execute_script("arguments[0].click();", cookie_btn)
-            print(f"Automatycznie kliknięto przycisk cookies: {sel}")
             cookies_clicked = True
             break
         except Exception:
             continue
-    if not cookies_clicked:
-        print("Nie znaleziono przycisku cookies lub nie kliknięto automatycznie. Możesz zaakceptować ręcznie.")
     # Poczekaj na zniknięcie overlay po akceptacji
     try:
         WebDriverWait(driver, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME, "cookieOverlay")))
     except Exception:
         pass
     time.sleep(1)
-    # Diagnostyka: zapisz HTML po próbie kliknięcia cookies (zawsze)
-    with open("debug_after_cookies.html", "w", encoding="utf-8") as f:
-        f.write(driver.page_source)
-    print("Zapisano HTML po próbie kliknięcia cookies do debug_after_cookies.html")
 
     # --- PRZYKŁADOWE: czekaj na pole e-mail i wpisz login ---
     # Użyj bezpośrednich, pewnych selektorów z debug_after_cookies.html
     try:
         email_input = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "signInName")))
     except TimeoutException:
-        print("Pole e-mail nieaktywne (id='signInName'). Debug HTML:")
-        print(driver.page_source[:2000])
         raise
     email_input.clear()
     email_input.send_keys(USERNAME)
@@ -86,21 +79,15 @@ try:
     try:
         pwd_input = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "password")))
     except TimeoutException:
-        print("Pole hasła nieaktywne (id='password'). Debug HTML:")
-        print(driver.page_source[:2000])
         raise
     pwd_input.clear()
     pwd_input.send_keys(PASSWORD)
 
     try:
         signin_btn = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "next")))
-        # Usuwamy atrybut 'disabled' jeśli występuje
         driver.execute_script("arguments[0].removeAttribute('disabled');", signin_btn)
         signin_btn.click()
-        print("Kliknięto przycisk logowania (id='next').")
     except Exception:
-        print("Nie znaleziono przycisku logowania (id='next'). Debug HTML:")
-        print(driver.page_source[:2000])
         raise
 
     # --- opcjonalnie: obsługa "Stay signed in?" ---
@@ -120,14 +107,8 @@ try:
         success_marker = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "selector_po_zalogowaniu"))
         )
-        print("Zalogowano pomyślnie!")
     except TimeoutException:
-        print("Nie znaleziono potwierdzenia zalogowania. Może wymagane MFA lub inna ścieżka.")
-        # dla debugowania wypisz aktualny URL:
-        print("Aktualny URL:", driver.current_url)
-        # możesz też zapisać HTML:
-        with open("debug_page.html", "w", encoding="utf-8") as f:
-            f.write(driver.page_source)
+        pass
     # Pozostaw okno otwarte do ręcznego zamknięcia
     input("Naciśnij Enter, aby zamknąć przeglądarkę...")
     driver.quit()
